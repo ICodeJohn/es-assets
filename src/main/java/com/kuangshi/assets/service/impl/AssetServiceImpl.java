@@ -1,20 +1,7 @@
-package com.kuangshi.assets.service;
+package com.kuangshi.assets.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.SortOptions;
-import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
-import co.elastic.clients.elasticsearch._types.aggregations.StringTermsAggregate;
-import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.indices.RefreshResponse;
-import co.elastic.clients.json.JsonData;
-import co.elastic.clients.util.NamedValue;
+import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kuangshi.assets.dao.AssetDAO;
 import com.kuangshi.assets.excel.reader.AssetExcelReader;
@@ -26,13 +13,17 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.util.*;
+
+import com.kuangshi.assets.service.AssetService;
 
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AssetService {
+public class AssetServiceImpl implements AssetService {
 
     private final ElasticsearchClient elasticsearchClient;
     private final AssetDAO assetDAO;
@@ -72,11 +63,12 @@ public class AssetService {
                             .numberOfReplicas("0")
                     )
                     .mappings(m -> m
+                            .dynamic(DynamicMapping.False)  // 禁用动态映射：忽略未知字段
                             .properties("assetId", p -> p.keyword(k -> k))
                             .properties("title", p -> p.text(t -> t))
                             .properties("uploader", p -> p.keyword(k -> k))
                             .properties("timestamp", p -> p.long_(l -> l))
-                            .properties("reviewStatus", p -> p.keyword(k -> k))
+                            .properties("status", p -> p.keyword(k -> k))
                             .properties("tags", p -> p.keyword(k -> k))
                             .properties("city", p -> p.keyword(k -> k))
                             .properties("size", p -> p.long_(l -> l))
@@ -119,7 +111,30 @@ public class AssetService {
         }
     }
 
-    getAssetById() {
+
+    @Override
+    public List<UploaderAvgSizeDTO> avgSizeByUploader() {
+        return assetDAO.avgSizeByUploader();
+    }
+
+    @Override
+    public List<TagStatsDTO> getTop5Tags() {
+        return assetDAO.getTop5Tags();
+    }
+
+    @Override
+    public List<UploaderQualityDTO> analyzeUploaderQuality() throws IOException {
+        return assetDAO.analyzeUploaderQuality();
+    }
+
+    @Override
+    public List<AssetDocument> searchAssets(Map<String, String> params) throws IOException {
+        return assetDAO.searchAssets(params);
+    }
+
+    @Override
+    public Map<String, Object> getAssetById(String id, String fields) throws IOException {
+        return assetDAO.getAssetById(id, fields);
 
     }
 }

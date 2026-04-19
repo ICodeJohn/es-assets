@@ -1,4 +1,4 @@
-package com.kuangshi.assets.excel.dto;
+package com.kuangshi.assets.excel.model;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
